@@ -7,7 +7,7 @@ clock = pygame.time.Clock()
 pygame.font.init()
 myfont = pygame.font.SysFont('Helvetica', 40)
 
-speedY = random.uniform(-0.05,0.05)
+#speedY = random.uniform(-0.05,0.05)
 
 def ball_restart(speed_x, speed_y, pos_x):
     global ball_speed_x, ball_speed_y
