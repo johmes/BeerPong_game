@@ -21,9 +21,6 @@ class Screen:
         # TASOITA TEKSTI KESKELLE
         screen_center = self.screen.get_rect().center
         self.text_pause_rect = self.text_pause.get_rect(center=screen_center)
-    
-    def draw(self, screen):
-        screen.blit(self.bg, [0, 0])
 
     # getterit screen pituudelle ja korkeudelle
     def getWidth(self):
