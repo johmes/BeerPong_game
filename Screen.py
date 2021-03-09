@@ -33,7 +33,7 @@ class Screen:
         return self.height
     
     def draw_bg(self, screen):
-         # clear screen to black
+        # clear screen to black
         screen.fill( (0,0,0) )
         if self.background:
             screen.blit(self.background, (0,0))
@@ -60,14 +60,9 @@ class Screen:
                     if event.key == pygame.K_ESCAPE:
                         pause = not pause
                         
-
             # UPDATES JA MUUTA
-            # if not pause:
-            #     # change elements position
-            #     self.player.update()
 
             # DRAWS
-
             self.draw_bg(self.screen)
 
             if pause:
@@ -81,4 +76,5 @@ class Screen:
         
         pygame.quit()
 
+# Kutsutaan luokkaa
 Screen(1280,720).run()
