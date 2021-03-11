@@ -1,92 +1,281 @@
 import pygame, sys, random, time, math
 from pygame import mixer
-
-pygame.display.init()
-pygame.mixer.init(44100, -16,2,2048)
-clock = pygame.time.Clock()
+import json
 pygame.font.init()
-myfont = pygame.font.SysFont('Helvetica', 40)
 
-#speedY = random.uniform(-0.05,0.05)
-
-def ball_restart(speed_x, speed_y, pos_x):
-    global ball_speed_x, ball_speed_y
-    ball.center = (pos_x, screen_height/2)
-    ball_speed_y += speed_y
-    ball_speed_x += speed_x
-
-def ball_animation():
-    if play == True:
-        global ball_speed_x, ball_speed_y
-        ball.x += ball_speed_x
-        ball.y += ball_speed_y
-
-        if ball.top <= 0 or ball.bottom >= screen_height:
-            ball_speed_y *= -1
-        if ball.left <= 0:
-            ball_speed_x *= -1
-        if ball.right >= screen_width:
-            ball_speed_x *= -1
-        
-
-#colors
-bg_color = pygame.Color('grey12')
-light_grey = (200,200,200)
-white_color = (255,255,255)
 
 
 screen_width = 1280
 screen_height = 720
-screen = pygame.display.set_mode(size=(screen_width, screen_height), flags=0, depth=0, display=0, vsync=0)
-pygame.display.flip()
-background_image = pygame.image.load("beerbong_game_bg_color.jpg").convert()
-pygame.display.set_caption('Beer Pong')
 
-#Ball configurations
-ball_speed_x = 5
-ball_speed_y = 0 #speedY
-ball_width = 21
-ball_height = 21
-play = False
+white_color = (255, 255, 255)
+orange_color = (255, 200, 28)
+red_color = (255, 0, 0)
+green_color = (0, 255, 0)
+black_color = (0, 0, 0)
 
+# HighScores {}
+f = open("BeerPong\HighScore.json",)
+HighScores = json.load(f)
+# for i in HighScores:
+#     print(i, HighScores[i])
 
-ball = pygame.Rect(100, screen_height/2 - 10.5, ball_width, ball_height)
-
-
-def draw(self,screen):
-    luku = 4
-    coord1 = (screen_width-188)
-    coord2 = (screen_height/2-74)
-    row = 0
-    for x in range(self.lines):
-        row += 40
-        for rivi in range(luku):
-            BFRC = pygame.Rect(coord1, coord2, cup_width, cup_height)
-            pygame.draw.ellipse(screen,cup_color,BFRC)
-            coord1 -= 34
-            coord2 += 20
-        luku -= 1
-        coord1 = (screen_width-188)
-        coord2 = (screen_height/2-74) + row
+current_score = 0
+highScore = 1000
+keys = list(HighScores.keys())
+main_font = pygame.font.SysFont("Helvetica", 35)
 
 
-while True:
-    #Handle input
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.display.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                play = True
-            # if event.key == pygame.K_UP:
-            #     #TODO...
-            # if event.key == pygame.K_DOWN:
-            #     #TODO...
+
+
+class BallInit():
+    def __init__(self):
+        self.ball_color = white_color
+        self.ball_size = [15, 15]
+        self.ball_pos = [100, (screen_height/2 - (self.ball_size[1]/2))]
+
+        self.ball = pygame.Rect(self.ball_pos[0], self.ball_pos[1], self.ball_size[0], self.ball_size[1])
+
+    def drawBall(self, screen):
+        pygame.draw.ellipse(screen, self.ball_color, self.ball) 
     
-    ball_animation()
-    #visuals
-    screen.blit(background_image, [0, 0])
-    pygame.draw.ellipse(screen, white_color, ball) 
-    pygame.display.flip()
-    clock.tick(60)
+    def getBall(self):
+        return self.ball
+
+    
+    def setBallPos(self, x, y):
+        self.ball_pos = [x, y]
+
+
+
+# Inherits Ball class
+class Ball(BallInit):
+    def __init__(self):
+        BallInit.__init__(self)
+        self.ball_speed = [0, 0]
+    
+    def set_ball_speed_x(self, x):
+        self.ball_speed[0] = x
+
+    def set_ball_speed_y(self, y):
+        self.ball_speed[1] = y
+
+    def ball_animation(self):
+        self.ball.x += self.ball_speed[0]
+        self.ball.y += self.ball_speed[1]
+        
+        if self.ball.top <= 0 or self.ball.bottom >= (screen_height - (self.ball_size[1]/2)):
+            self.ball_speed[1] *= -1
+
+        if self.ball.left <= 0 + (self.ball_size[1]/2):
+            self.ball_speed[0] *= -1
+
+        if self.ball.right >= (screen_width):
+            self.ball_speed[0] *= -1
+
+
+class PowerBar:
+    def __init__(self):
+        self.decrease_speed = -3
+        self.bar_start_width = 0
+        self.bar_max_width = 350
+        self.bar_pos_x = 20
+        self.bar_pos_y = 20
+        self.bar_height = 40
+        self.bar_color = None
+        self.x_change = 0
+
+        self.changeColor(green_color)
+
+    def changeColor(self, color):
+        self.bar_color = color
+    
+    # Piirretään power bar pohja
+    def drawBar(self, screen):
+        pygame.draw.rect(screen, self.bar_color, (self.bar_pos_x, self.bar_pos_y, self.bar_start_width, self.bar_height))
+        #border for power bar
+        pygame.draw.rect(screen, black_color, (self.bar_pos_x, self.bar_pos_y, self.bar_max_width, self.bar_height), 1)
+
+    def barAnimation(self):
+        self.bar_start_width += self.x_change
+
+        if self.bar_start_width > 0:
+            self.bar_start_width += self.decrease_speed
+
+        if self.bar_start_width <= 0:
+            self.bar_start_width = 3
+
+        if self.bar_start_width < self.bar_max_width * (1/3):
+            self.changeColor(green_color)
+
+        if self.bar_start_width >= self.bar_max_width * (1/3):
+            self.changeColor(orange_color)
+
+        if self.bar_start_width >= self.bar_max_width * (2/3):
+            self.changeColor(red_color)
+            
+        if self.bar_start_width > self.bar_max_width:
+            self.x_change = 0
+
+class Aiming:
+    def __init__(self):
+        self.ball = Ball()
+        self.bar_color = orange_color
+        self.startpoint = pygame.math.Vector2(self.ball.ball_pos[0] + (self.ball.ball_size[0]/2), screen_height/2)
+        self.endpoint = pygame.math.Vector2(250, 0)
+        self.direction_x = 0
+        self.direction_y = 0
+        self.rot_speed = 0
+        self.angle = 0
+        self.current_endpoint = pygame.math.Vector2(0, 0)
+
+    def drawAimer(self, screen):
+        pygame.draw.line(screen, self.bar_color, self.startpoint, (self.startpoint + self.current_endpoint), 3)
+        pygame.draw.line(screen, self.bar_color, self.startpoint, (self.startpoint + self.current_endpoint), 3)
+        
+
+    def AimingAnimation(self):
+        self.angle = (self.angle + self.rot_speed) % 360
+        self.current_endpoint = self.endpoint.rotate(self.angle)
+        # if self.angle == 5:
+        #     self.angle = 5
+        # elif self.angle == 355:
+        #     self.angle = 355
+
+
+class Screen:
+    def __init__(self, width, height):
+        self.width = width 
+        self.height = height
+        self.caption = "Asteriski Beer Pong"
+        self.background = None
+        
+        pygame.init()
+
+        # SCREENIN POHJA
+        self.screen = pygame.display.set_mode(size=(self.width, self.height), flags=0, depth=0, display=0, vsync=0)
+        pygame.display.set_caption(self.caption)
+
+        
+        # Jos bg ei näy, poista "BeerPong_game/" edestä
+        self.set_background("BeerPong\Bg_Image.jpg")
+
+        # ISO PAUSE TEKSTI PUNASELLA
+        font = pygame.font.SysFont("", 84)
+        self.pause_text = font.render("PAUSE", True, red_color)
+
+        # TASOITA TEKSTI KESKELLE
+        screen_center = self.screen.get_rect().center
+        self.pause_text_rect = self.pause_text.get_rect(center=screen_center, y = 170)
+        
+
+    main_font = pygame.font.SysFont("Helvetica", 35)
+
+    def drawHighScore(self, screen):
+        title_font = pygame.font.SysFont("Helvetica",25,True)
+        list_font = pygame.font.SysFont("Helvetica",25)
+        title_label = title_font.render("HighScores: ",1,(255,255,255))
+        screen.blit(title_label,(0.60*screen_width, 5))
+        s=1
+        y = 30
+        for i in range(0,5):
+            list_label = list_font.render((str(s)+".    "+(str(keys[i]))),1,(150,150,150))
+            screen.blit(list_label,(0.60*screen_width,y ))
+            list_label = list_font.render(str(HighScores[keys[i]]),1,(100,255,150))
+            screen.blit(list_label,(0.75*screen_width,y ))
+            s += 1
+            y += 23
+
+
+    
+    def draw_bg(self, screen):
+        # clear screen to black
+        screen.fill(black_color)
+        if self.background:
+            screen.blit(self.background, (0,0))
+        
+        #Score teksti
+        score_label = main_font.render(f"Score: {current_score} ",1,(255,255,255))
+        self.screen.blit(score_label, (screen_width/2 -score_label.get_width()/2,10))
+    
+    def set_background(self, img=None):
+        if img: 
+            self.background = pygame.image.load(img)
+
+
+def main():
+    # MAIN STRUCTURE
+    clock = pygame.time.Clock()
+
+    run = True
+    pause = False
+    ballMove = False
+
+    # Objects
+    ball = Ball()
+    power_bar = PowerBar()
+    window = Screen(screen_width, screen_height)
+    aimBar = Aiming()
+
+    while run:
+        
+        # KEY EVENTIT
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+
+            if event.type == pygame.KEYDOWN:
+                # Pause on ESC
+                if event.key == pygame.K_ESCAPE:
+                    pause = not pause
+            
+            if not pause:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        ballMove = True
+                    # ENTER to restart
+                    if event.key == pygame.K_RETURN:
+                        main()
+                        #ballMove = False
+
+                    if event.key == pygame.K_DOWN:
+                        aimBar.rot_speed = 0.4
+                    elif event.key == pygame.K_UP:
+                        aimBar.rot_speed = -0.4
+                    elif event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                        power_bar.x_change = 5   
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                        power_bar.x_change = 0
+
+                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                        aimBar.rot_speed = 0
+
+        
+        # DRAWS
+        window.draw_bg(window.screen)
+        ball.drawBall(window.screen)
+        power_bar.drawBar(window.screen)
+        aimBar.drawAimer(window.screen)
+        window.drawHighScore(window.screen)
+        
+                    
+        # UPDATES JA MUUTA
+        if not pause:
+            if ballMove:
+                ball.set_ball_speed_x((power_bar.bar_start_width*0.08))
+                ball.set_ball_speed_y((aimBar.endpoint.rotate(aimBar.angle)[1]+(ball.ball_size[1]*0.75))*0.08)
+                ball.ball_animation()
+                
+            else:
+                power_bar.barAnimation()
+                aimBar.AimingAnimation()
+        elif pause:
+            # draw pause text
+            window.screen.blit(window.pause_text, window.pause_text_rect.topleft)
+
+        pygame.display.update()
+        clock.tick(60) 
+    pygame.quit()
+    sys.exit() 
+main()
