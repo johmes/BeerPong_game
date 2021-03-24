@@ -32,15 +32,33 @@ big_font = pygame.font.SysFont("Helvetica", 84)
 
 # SOUNDS
 # hit = pygame.mixer.Sound('BeerPong_game/punch_2.wav')
+#TEXTS
+main_caption = "Asteriski Beer Pong"
+menuRun = True
+# MAINMENU
+# while menuRun:
+#     s = pygame.Surface((screen_width,screen_height))
+#     s.fill(background_color)
+#     screen.blit(s, (0,0))
 
+#     # KEY EVENTIT
+#     for event in pygame.event.get():
+#         if event.type == pygame.QUIT:
+#             pygame.quit()
+#             sys.exit() 
+        
+#         if event.type == pygame.KEYDOWN:
+#                 # ENTER to restart
+#                 if event.key == pygame.K_RETURN:
+#                     menuRun = False
+#     pygame.display.update()
+
+# THE GAME
 # SPRITE AND IMAGE PATHS
 ball_path = "BeerPong_game/ball.png"
 crosshair_path = "BeerPong_game/hiusristikko.png"
 redcup_path = "BeerPong_game/redcup.png"
 background_path = "BeerPong_game/beerbong_game_bg.png"
-
-#TEXTS
-main_caption = "Asteriski Beer Pong"
 
 
 # Cups
@@ -158,8 +176,16 @@ class Cups(pygame.sprite.Sprite):
 class Crosshair(pygame.sprite.Sprite):
     def __init__(self, path, color):
         super().__init__()
-        self.image = pygame.image.load(path)
+
+        try:
+            self.image = pygame.image.load(path)
+            self.rect = self.image.get_rect()
+        except:
+             self.image = pygame.Surface([30,30])
+             self.image.fill(color)
+             
         self.rect = self.image.get_rect()
+
 
     def update(self):
         self.rect.center = pygame.mouse.get_pos()
@@ -247,7 +273,11 @@ class Screen:
     
     def set_background(self, img=None):
         if img: 
-            self.background = pygame.image.load(img)
+            try:
+                self.background = pygame.image.load(img)
+            except:
+                self.background = pygame.Surface([screen_width,screen_height])
+                self.background.fill(background_color)
 
 
 def main():
@@ -348,7 +378,7 @@ def main():
             if ballMove:
                 speed = power_bar.bar_start_width/10
                 if player1:
-                    time += 0.17
+                    time += 0.17 
                     if drunk:
                         deviationY = 100 * random.random() * ((-0.71) - 0.71) + 0.71
                         deviationX = 100 * random.random() * ((-0.41) - 0.71) + 0.41
