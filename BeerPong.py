@@ -1,7 +1,6 @@
 import pygame, sys, random, time, math, os
 from pygame import mixer
 import json
-import pygame.gfxdraw
 
 pygame.init()
 pygame.font.init()
@@ -32,13 +31,13 @@ main_font = pygame.font.SysFont("Helvetica", 35)
 big_font = pygame.font.SysFont("Helvetica", 84)
 
 # SOUNDS
-hit = pygame.mixer.Sound('BeerPong_game/punch_2.wav')
+# hit = pygame.mixer.Sound('BeerPong_game/punch_2.wav')
 
 # SPRITE AND IMAGE PATHS
-ball_path = "ball.png"
-crosshair_path = "hiusristikko.png"
-redcup_path = "redcup.png"
-background_path = "beerbong_game_bg.png"
+ball_path = "BeerPong_game/ball.png"
+crosshair_path = "BeerPong_game/hiusristikko.png"
+redcup_path = "BeerPong_game/redcup.png"
+background_path = "BeerPong_game/beerbong_game_bg.png"
 
 #TEXTS
 main_caption = "Asteriski Beer Pong"
@@ -47,7 +46,6 @@ main_caption = "Asteriski Beer Pong"
 # Cups
 cups_1 = []
 cups_2 = []
-perRows = 1
 
 
 def mouseVisible(visible):
@@ -142,18 +140,6 @@ class PowerBar:
         if self.bar_start_width > self.bar_max_width:
             self.x_change = 0
 
-class Aiming:
-    def __init__(self, ball):
-        self.rect = ball
-        self.color = orange_color
-        self.angle = 0
-        self.startpoint = (self.rect.ball_start_pos[0] + (self.rect.ball_size[0]/2), vertical_center + (self.rect.ball_size[1]/2))
-
-    
-    def degToRad(self, angle):
-        return (angle*(math.pi/180))
-
-
 # SPRITE CLASS
 class Cups(pygame.sprite.Sprite):
     def __init__(self, path, pos_x, pos_y, color):
@@ -213,7 +199,6 @@ class Screen:
         self.background = None
         pygame.display.set_caption(self.caption)
         
-        # Jos bg ei näy, poista "BeerPong_game/" edestä
         self.set_background(background_path)
 
         # ISO PAUSE TEKSTI PUNASELLA
@@ -248,8 +233,6 @@ class Screen:
             screen.blit(list_label,(0.75*screen_width,y ))
             s += 1
             y += 23
-
-
 
 
     def draw_bg(self, screen):
@@ -287,6 +270,8 @@ def main():
     crosshair_group = pygame.sprite.Group()
     player1_start_pos = [screen_width*0.03, vertical_center]
     player2_start_pos = [screen_width*0.96, vertical_center]
+    mousePos = pygame.mouse.get_pos()
+
 
     # OBEJCTS
     power_bar = PowerBar()
@@ -294,7 +279,7 @@ def main():
     createCuplist(132, False, cups_1)
     createCuplist(1148, True, cups_2)
     tahtain = Crosshair(crosshair_path, crosshair_color)
-
+    
     player_1 = Ball(ball_path, player1_start_pos[0], player1_start_pos[1], white_color, time)
     player_2 = Ball(ball_path, player2_start_pos[0], player2_start_pos[1], white_color, time)
 
@@ -312,11 +297,11 @@ def main():
     player_group.add(player_2)
 
     while run:
-        # if pygame.sprite.spritecollide(player_1, cup_group_2, True):
-        #     #TODO
+        if pygame.sprite.spritecollide(player_1, cup_group_2, True):
+            print("Hit")
 
-        # elif pygame.sprite.spritecollide(player_2, cup_group_1, True):
-        #     #TODO
+        elif pygame.sprite.spritecollide(player_2, cup_group_1, True):
+            print("Hit")
 
         # KEY EVENTIT
         for event in pygame.event.get():
@@ -360,13 +345,10 @@ def main():
         # UPDATES JA MUUTA
         if not pause:
             mouseVisible(False)
-
             if ballMove:
+                speed = power_bar.bar_start_width/10
                 if player1:
-                    mousePos = pygame.mouse.get_pos()
-                    speed = power_bar.bar_start_width/1.75
                     time += 0.17
-
                     if drunk:
                         deviationY = 100 * random.random() * ((-0.71) - 0.71) + 0.71
                         deviationX = 100 * random.random() * ((-0.41) - 0.71) + 0.41
@@ -375,17 +357,19 @@ def main():
                         deviationY = 0
 
                     angle = math.atan2((mousePos[1]+deviationY)-player1_start_pos[1], (mousePos[0]+deviationX)-player1_start_pos[0])
+                    
+                    # Täällä on joku random ongelma plz auttakaa
+                    # player_1.dx = speed * math.cos(angle)
+                    # player_1.dy = speed * math.sin(angle)
 
-                    player_1.dx = speed * math.cos(angle)
-                    player_1.dy = speed * math.sin(angle)
-
-                    # if player_1.rect.x > previousXPos:
-                    #     player_1.dx = (math.cos(angle) * speed * time) + ((-4.81 * (time)**2)/2)
-                    #     player_1.dy = math.sin(angle) * speed
-                    #     previousXPos = player_1.rect.x
-                    # else:
-                    #     pygame.time.wait(1000)
-                    #     main()
+                    if player_1.rect.x > previousXPos:
+                        player_1.dx = (math.cos(angle) * speed * time) + ((-4.81 * (time)**2)/2)
+                        player_1.dy = math.sin(angle) * speed
+                        previousXPos = player_1.rect.x
+                    else:
+                        pygame.time.wait(1000)
+                        main()
+                    # Ongelma loppuu tähän ...toisibn sanoen se on koko tähtäys mekanismi.
 
                     player_1.ball_animation()
  
