@@ -35,10 +35,10 @@ big_font = pygame.font.SysFont("Helvetica", 84)
 hit = pygame.mixer.Sound('BeerPong_game/punch_2.wav')
 
 # SPRITE AND IMAGE PATHS
-ball_path = "BeerPong_game/images/ball.png"
-crosshair_path = "BeerPong_game/images/hiusristikko.png"
-redcup_path = "BeerPong_game/images/redcup.png"
-background_path = "BeerPong_game/images/beerbong_game_bg.png"
+ball_path = "ball.png"
+crosshair_path = "hiusristikko.png"
+redcup_path = "redcup.png"
+background_path = "beerbong_game_bg.png"
 
 #TEXTS
 main_caption = "Asteriski Beer Pong"
