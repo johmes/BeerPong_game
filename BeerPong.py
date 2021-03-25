@@ -12,6 +12,7 @@ screen_height = 720
 vertical_center = screen_height/2
 screen = pygame.display.set_mode(size=(screen_width, screen_height), flags=0, depth=0, display=0, vsync=0)
 
+
 white_color = (255, 255, 255)
 orange_color = (255, 200, 28)
 red_color = (255, 0, 0)
@@ -20,54 +21,37 @@ black_color = (0, 0, 0)
 background_color = (55,53,102)
 crosshair_color = (102, 153, 255)
 
+
 # HighScores {}
 f = open("BeerPong_game/HighScore.json",)
 HighScores = json.load(f)
-
 current_score = 0
 highScore = 1000
+
+
+# FONTS
 keys = list(HighScores.keys())
-main_font = pygame.font.SysFont("Helvetica", 35)
-big_font = pygame.font.SysFont("Helvetica", 84)
+main_font = pygame.font.SysFont("microsoftyaheimicrosoftyaheiuilight", 35)
+main_font_big = pygame.font.SysFont("microsoftyaheimicrosoftyaheiuilight", 84)
+main_font_small = pygame.font.SysFont("microsoftyaheimicrosoftyaheiuilight", 28)
+big_font = pygame.font.SysFont("magneto", 84)
+title_font = pygame.font.SysFont("Helvetica",25,True)
+list_font = pygame.font.SysFont("Helvetica",25)
+
+# SPRITE AND IMAGE PATHS
+ball_path = "BeerPong_game/images/ball.png"
+crosshair_path = "BeerPong_game/images/hiusristikko.png"
+redcup_path = "BeerPong_game/images/redcup.png"
+background_path = "BeerPong_game/images/beerbong_game_bg.png"
 
 # SOUNDS
-# hit = pygame.mixer.Sound('BeerPong_game/punch_2.wav')
+
 #TEXTS
 main_caption = "Asteriski Beer Pong"
-menuRun = True
-# MAINMENU
-# while menuRun:
-#     s = pygame.Surface((screen_width,screen_height))
-#     s.fill(background_color)
-#     screen.blit(s, (0,0))
+title_label = title_font.render("HighScores: ", True, (255,255,255))
 
-#     # KEY EVENTIT
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             pygame.quit()
-#             sys.exit() 
-        
-#         if event.type == pygame.KEYDOWN:
-#                 # ENTER to restart
-#                 if event.key == pygame.K_RETURN:
-#                     menuRun = False
-#     pygame.display.update()
 
 # THE GAME
-# SPRITE AND IMAGE PATHS
-ball_path = "BeerPong_game/ball.png"
-crosshair_path = "BeerPong_game/hiusristikko.png"
-redcup_path = "BeerPong_game/redcup.png"
-background_path = "BeerPong_game/beerbong_game_bg.png"
-
-
-# Cups
-cups_1 = []
-cups_2 = []
-
-
-def mouseVisible(visible):
-    pygame.mouse.set_visible(visible)
 
 # Ball Class
 class Ball(pygame.sprite.Sprite):
@@ -84,8 +68,8 @@ class Ball(pygame.sprite.Sprite):
         self.rect.midtop = [pos_x, pos_y]
         self.ball_size = self.image.get_size()
 
-        self.pos_x = pos_x
-        self.pos_y = pos_y
+        self.start_pos_x = pos_x
+        self.start_pos_y = pos_x
         self.dx = 0
         self.dy = 0
 
@@ -93,26 +77,14 @@ class Ball(pygame.sprite.Sprite):
         self.rect.x = self.rect.x + self.dx
         self.rect.y = self.rect.y + self.dy
 
-    def restart(self):
-        self.dx = 0
+    def restart(self, pos):
+        
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
         self.dy = 0
-        self.rect.x = self.ball_start_pos[0]
-        self.rect.y = self.ball_start_pos[1]
+        self.dx = 0
 
-
-class Text:
-    def __init__(self, text, font, color, position):
-        self.text = text
-        self.color = color
-        self.position = position
-        self.font = font
-    
-    def drawText(self, screen):
-        self.text_render = self.font.render(self.text, True, self.color)
-
-        screen.blit(self.text_render, self.position)
-
-
+# POWERBAR CLASS
 class PowerBar:
     def __init__(self):
         self.decrease_speed = -3
@@ -136,7 +108,7 @@ class PowerBar:
         #border for power bar
         pygame.draw.rect(screen, black_color, (self.bar_pos_x, self.bar_pos_y, self.bar_max_width, self.bar_height), 1)
 
-        
+
     def barAnimation(self):
         self.bar_start_width += self.x_change
 
@@ -157,8 +129,24 @@ class PowerBar:
             
         if self.bar_start_width > self.bar_max_width:
             self.x_change = 0
+    def reset(self):
+        self.x_change = 0
+        self.bar_start_width = 3
+# TEXT CLASS
+class Text:
+    def __init__(self, text, font, color, position):
+        self.text = text
+        self.color = color
+        self.font = font
+        self.position = position
+    
+    def drawText(self, screen):
+        screen_center = screen.get_rect().center
+        self.render = self.font.render(self.text, True, self.color)
+        screen.blit(self.render, (self.position[0] - self.render.get_width()/2, self.position[1]))
 
-# SPRITE CLASS
+
+# SPRITE CLASSES
 class Cups(pygame.sprite.Sprite):
     def __init__(self, path, pos_x, pos_y, color):
         super().__init__()
@@ -191,21 +179,6 @@ class Crosshair(pygame.sprite.Sprite):
         self.rect.center = pygame.mouse.get_pos()
 
 
-def createCuplist(x_ofset, reverse, list):
-    addToY = 0
-    # Lisätään pelaajien mukit omiin listoihin.
-    for i in range(4):
-        for j in range(4-i):
-            y = 264 + (51 * j) + addToY
-            if reverse == True:
-                x = x_ofset - (44 * i)
-            else:
-                x = x_ofset + (44 * i)
-            list.append(Cups(redcup_path, x, y, red_color))
-        addToY += 25
-
-def drawLine(pos1, pos2):
-    pygame.draw.line(screen, (255,255,255), pos1, pos2)
 
 class Button:
     def __init__(self, width, height, x, y, color, text):
@@ -219,6 +192,7 @@ class Button:
     def drawButton(self, screen):
         pygame.draw.rect(screen, self.color, self.button)
 
+
 class Screen:
     def __init__(self):
         self.caption = main_caption
@@ -227,18 +201,6 @@ class Screen:
         
         self.set_background(background_path)
 
-        # ISO PAUSE TEKSTI PUNASELLA
-        font = pygame.font.SysFont("", 84)
-        self.pause_text = font.render("PAUSE", True, red_color)
-
-        # TASOITA TEKSTI KESKELLE
-        screen_center = screen.get_rect().center
-        self.pause_text_rect = self.pause_text.get_rect(center=screen_center, x= screen_width/2-113, y = screen_height/2-43)
-    
-    
-
-    main_font = pygame.font.SysFont("Helvetica", 35)
-
     def alpha(self, screen):
         s = pygame.Surface((screen_width,screen_height))
         s.set_alpha(50)
@@ -246,9 +208,6 @@ class Screen:
         screen.blit(s, (0,0))
 
     def drawHighScore(self, screen):
-        title_font = pygame.font.SysFont("Helvetica",25,True)
-        list_font = pygame.font.SysFont("Helvetica",25)
-        title_label = title_font.render("HighScores: ",1,(255,255,255))
         screen.blit(title_label,(0.60*screen_width, 5))
         s=1
         y = 30
@@ -268,8 +227,8 @@ class Screen:
             screen.blit(self.background, (0,0))
         
         #Score teksti
-        score_label = main_font.render(f"Score: {current_score} ",1,(255,255,255))
-        screen.blit(score_label, (screen_width/2 -score_label.get_width()/2,10))
+        score_label = Text(f"Score: {current_score} ", main_font, white_color, (screen_width/2, 10))
+        score_label.drawText(screen)
     
     def set_background(self, img=None):
         if img: 
@@ -277,61 +236,134 @@ class Screen:
                 self.background = pygame.image.load(img)
             except:
                 self.background = pygame.Surface([screen_width,screen_height])
-                self.background.fill(background_color)
+                self.background.fill(background_color) 
+
+
+# INIT VARIABLES
+FPS = 60
+player1_start_pos = [screen_width*0.03, vertical_center]
+player2_start_pos = [screen_width*0.96, vertical_center]
+
+
+# SPRITE GROUPS
+cup_group_1 = pygame.sprite.Group()
+cup_group_2 = pygame.sprite.Group()
+player_group = pygame.sprite.Group()
+crosshair_group = pygame.sprite.Group()
+
+
+# OBEJCTS
+power_bar = PowerBar()
+window = Screen()
+tahtain = Crosshair(crosshair_path, crosshair_color)
+player_1 = Ball(ball_path, player1_start_pos[0], player1_start_pos[1], white_color, time)
+player_2 = Ball(ball_path, player2_start_pos[0], player2_start_pos[1], white_color, time)
+
+
+#TEXTS OBJECTS
+logo_text = Text(main_caption, big_font, orange_color, (screen_width/2, screen_height/2-80))
+pause_text = Text("PAUSE", main_font_big, red_color, (screen_width/2, screen_height/2-50))
+quit_text = Text("Main menu (Q)", main_font, white_color, (screen_width/2, screen_height/2+50))
+resume_text = Text("Resume (ESC)", main_font, white_color, (screen_width/2, screen_height/2+90))
+power_text = Text("POWER: ", main_font_small, white_color, (70,20))
+gameover_text = Text("GAME OVER", main_font_big, orange_color, (screen_width/2, screen_height/2-50))
+newgame_text = Text("New Game (ENTER)", main_font, white_color, (screen_width/2, screen_height/2+50))
+
+
+# ADD CUPS TO GROUP
+def createCuplist(x_ofset, reverse, group):
+    addToY = 0
+    # Lisätään pelaajien mukit omiin listoihin.
+    for i in range(4):
+        for j in range(4-i):
+            y = 264 + (51 * j) + addToY
+            if reverse == True:
+                x = x_ofset - (44 * i)
+            else:
+                x = x_ofset + (44 * i)
+            group.add(Cups(redcup_path, x, y, red_color))
+        addToY += 25
+
+
+def drawLine(pos1, pos2):
+    pygame.draw.line(screen, (255,255,255), pos1, pos2)
+
+def mouseVisible(visible):
+    pygame.mouse.set_visible(visible)
+    
+# DO INITIAL STUFF BEFORE GAME LAUNCH
+def initGame():
+    createCuplist(132, False, cup_group_1)
+    createCuplist(1148, True, cup_group_2)
+    crosshair_group.add(tahtain)
+    player_group.add(player_1)
+    player_group.add(player_2)
+
+    player_1.restart((player1_start_pos[0], player1_start_pos[1]))
+    player_2.restart((player2_start_pos[0], player2_start_pos[1]))
+
+    main()
+
+
+# PAUSE 
+def pauseGame():
+    mouseVisible(True)
+    window.alpha(screen)
+    pause_text.drawText(screen)
+    resume_text.drawText(screen)
+    quit_text.drawText(screen)
+
+
+#GAME OVER
+def gameOver():
+    quit_text = Text("Main menu (Q)", main_font, white_color, (screen_width/2, screen_height/2+90))
+    mouseVisible(True)
+    window.alpha(screen)
+    gameover_text.drawText(screen)
+    newgame_text.drawText(screen)
+    quit_text.drawText(screen)
 
 
 def main():
     # MAIN STRUCTURE
     clock = pygame.time.Clock()
+    
+    power_bar.reset()
 
-    FPS = 60
     run = True
+    itsOver = False
     pause = False
-    ballMove = False
-    player1 = True
-    player2 = False
     drunk = False
-    time = 0
+    ballMove = False
+    player1 = False
+    player2 = True
     previousXPos = 0
     previousYPos = 0
-    cup_group_1 = pygame.sprite.Group()
-    cup_group_2 = pygame.sprite.Group()
-    player_group = pygame.sprite.Group()
-    crosshair_group = pygame.sprite.Group()
-    player1_start_pos = [screen_width*0.03, vertical_center]
-    player2_start_pos = [screen_width*0.96, vertical_center]
-    mousePos = pygame.mouse.get_pos()
-
-
-    # OBEJCTS
-    power_bar = PowerBar()
-    window = Screen()
-    createCuplist(132, False, cups_1)
-    createCuplist(1148, True, cups_2)
-    tahtain = Crosshair(crosshair_path, crosshair_color)
-    
-    player_1 = Ball(ball_path, player1_start_pos[0], player1_start_pos[1], white_color, time)
-    player_2 = Ball(ball_path, player2_start_pos[0], player2_start_pos[1], white_color, time)
-
-    #TEXTS
-    pause_text = Text("PAUSE", big_font, red_color, window.pause_text_rect.topleft)
-    power_text = Text("POWER: ", main_font, white_color, (10,20))
-
-    # SPRITE GROUPS
-    for cup in cups_1:
-        cup_group_1.add(cup)
-    for cup in cups_2:
-        cup_group_2.add(cup)
-    crosshair_group.add(tahtain)
-    player_group.add(player_1)
-    player_group.add(player_2)
+    time = 0
 
     while run:
+        mousePos = pygame.mouse.get_pos()
+
+        # DRAWS
+        window.draw_bg(screen)
+        cup_group_1.draw(screen)
+        cup_group_2.draw(screen)
+        player_group.draw(screen)
+        power_bar.drawBar(screen)
+        power_text.drawText(screen)
+        window.drawHighScore(screen)
+
+        # COLLIDE DETECTION
         if pygame.sprite.spritecollide(player_1, cup_group_2, True):
             print("Hit")
+            #current_score += 10
 
+            if len(cup_group_2) == 0:
+                itsOver = True
+                
         elif pygame.sprite.spritecollide(player_2, cup_group_1, True):
             print("Hit")
+
 
         # KEY EVENTIT
         for event in pygame.event.get():
@@ -350,35 +382,37 @@ def main():
                         ballMove = True
             
                 elif event.type == pygame.KEYDOWN:
-                    # ENTER to restart
-                    if event.key == pygame.K_RETURN:
-                        main()
-
+                    # 'HARD RESET'
+                    if event.key == ord('f'):   
+                        initGame()
+                        
                     if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT or event.key == ord('a') or event.key == ord('d'):
                         power_bar.x_change = 5   
+                    
+                    if itsOver:
+                        if event.key == pygame.K_RETURN:  
+                            initGame()
+                        elif event.key == ord('q'):
+                            game_menu()
 
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT or event.key == ord('a') or event.key == ord('d'):
-                        power_bar.x_change = 0
-
-        
-        # DRAWS
-        window.draw_bg(screen)
-        cup_group_1.draw(screen)
-        cup_group_2.draw(screen)
-        player_group.draw(screen)
-        power_bar.drawBar(screen)
-        power_text.drawText(screen)
-        window.drawHighScore(screen)
+                        power_bar.x_change = 0 
+            elif pause:
+                if event.type == pygame.KEYDOWN:
+                    # Go to main menu
+                    if event.key == ord('q'):
+                        game_menu()
         
         
         # UPDATES JA MUUTA
         if not pause:
             mouseVisible(False)
             if ballMove:
-                speed = power_bar.bar_start_width/10
+                speed = power_bar.bar_start_width/4
+                time += 0.05
+
                 if player1:
-                    time += 0.17 
                     if drunk:
                         deviationY = 100 * random.random() * ((-0.71) - 0.71) + 0.71
                         deviationX = 100 * random.random() * ((-0.41) - 0.71) + 0.41
@@ -388,20 +422,45 @@ def main():
 
                     angle = math.atan2((mousePos[1]+deviationY)-player1_start_pos[1], (mousePos[0]+deviationX)-player1_start_pos[0])
                     
-                    # Täällä on joku random ongelma plz auttakaa
-                    # player_1.dx = speed * math.cos(angle)
-                    # player_1.dy = speed * math.sin(angle)
 
                     if player_1.rect.x > previousXPos:
-                        player_1.dx = (math.cos(angle) * speed * time) + ((-4.81 * (time)**2)/2)
-                        player_1.dy = math.sin(angle) * speed
+                        player_1.dx = (speed * math.cos(angle)) + (-9.81* (time)**2)
+                        player_1.dy = speed * math.sin(angle)
                         previousXPos = player_1.rect.x
                     else:
-                        pygame.time.wait(1000)
-                        main()
-                    # Ongelma loppuu tähän ...toisibn sanoen se on koko tähtäys mekanismi.
+                        if not itsOver:
+                            pygame.time.wait(1000)
+                            player_1.restart((player1_start_pos[0], player1_start_pos[1]))
+                            player1 = False
+                            player2 = True                           
+                            main()
 
                     player_1.ball_animation()
+
+                if player2:
+                    if drunk:
+                        deviationY = 100 * random.random() * ((-0.71) - 0.71) + 0.71
+                        deviationX = 100 * random.random() * ((-0.41) - 0.71) + 0.41
+                    else: 
+                        deviationX = 0
+                        deviationY = 0
+
+                    angle = math.atan2((mousePos[1]+deviationY)-player2_start_pos[1], (mousePos[0]+deviationX)-player2_start_pos[0])
+                    
+
+                    if player_2.rect.x > previousXPos:
+                        player_2.dx = (speed * math.cos(angle)) + (-9.81* (time)**2)
+                        player_2.dy = speed * math.sin(angle)
+                        previousXPos = player_2.rect.x
+                    else:
+                        if not itsOver:
+                            pygame.time.wait(1000)
+                            player_2.restart((player2_start_pos[0], player2_start_pos[1]))
+                            player1 = True
+                            player2 = False
+                            main()
+
+                    player_2.ball_animation()
  
             else:
                 crosshair_group.draw(screen)
@@ -412,11 +471,34 @@ def main():
                 power_bar.barAnimation()
 
         elif pause:
-            # draw pause text
-            mouseVisible(True)
-            Button(screen_width/2-100, screen_height/2+50, 200, 50, red_color, "EXIT GAME").drawButton(screen)
-            window.alpha(screen)
-            pause_text.drawText(screen)
+            pauseGame()
+
+        if itsOver:
+            gameOver()
+
         pygame.display.update()
-        clock.tick(FPS) 
-main()
+        clock.tick(FPS)
+
+# MAINMENU        
+def game_menu():
+    
+    while True:
+        clock = pygame.time.Clock()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit() 
+
+            if event.type == pygame.KEYDOWN:
+                # ENTER to restart
+                if event.key == pygame.K_RETURN:
+                    initGame()
+
+
+        screen.fill(background_color)
+        logo_text.drawText(screen)
+        newgame_text.drawText(screen)
+
+        pygame.display.update()
+        clock.tick(60)   
+game_menu()
