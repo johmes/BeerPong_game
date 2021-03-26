@@ -335,8 +335,8 @@ def main():
     pause = False
     drunk = False
     ballMove = False
-    player1 = False
-    player2 = True
+    player1 = True
+    player2 = False
     previousXPos = 0
     previousYPos = 0
     time = 0
