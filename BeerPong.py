@@ -24,11 +24,11 @@ crosshair_color = (102, 153, 255)
 
 
 # HighScores {}
-f = open("BeerPong_game/HighScore.json",)
-HighScores = json.load(f)
-current_score_1 = 0
-current_score_2 = 0
-highScore = 1000
+with open("HighScore.json",) as f:
+    HighScores = json.load(f)
+    current_score_1 = 0
+    current_score_2 = 0
+    highScore = 1000
 
 
 # FONTS
@@ -42,10 +42,10 @@ list_font = pygame.font.SysFont("Helvetica", 25)
 symbols = pygame.font.SysFont("segoeuisymbol", 84)
 
 # SPRITE AND IMAGE PATHS
-ball_path = "BeerPong_game/images/ball.png"
-crosshair_path = "BeerPong_game/images/hiusristikko.png"
-redcup_path = "BeerPong_game/images/redcup.png"
-background_path = "BeerPong_game/images/beerbong_game_bg.png"
+ball_path = "images/ball.png"
+crosshair_path = "images/hiusristikko.png"
+redcup_path = "images/redcup.png"
+background_path = "images/beerbong_game_bg.png"
 
 # SOUNDS
 
@@ -138,6 +138,7 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.midtop = [pos_x, pos_y]
         self.ball_size = self.image.get_size()
+        self.score = 0
 
         self.start_pos_x = pos_x
         self.start_pos_y = pos_x
@@ -154,6 +155,12 @@ class Ball(pygame.sprite.Sprite):
         self.rect.y = pos[1]
         self.dy = 0
         self.dx = 0
+
+    def updateScore(self):
+        self.score += 10
+
+    def getScore(self):
+        return self.score
 
 class Cups(pygame.sprite.Sprite):
     def __init__(self, path, pos_x, pos_y, color):
@@ -228,14 +235,7 @@ class Screen:
             s += 1
             y += 23
 
-    def drawScore(self, screen):
-        player1 = main_font.render(f"Johannes: {current_score_1}", 1, white_color)
-        screen.blit(player1,(20, 20))
-
-        player2 = main_font.render(f"Milo: {current_score_2}", 1, white_color)
-        screen.blit(player2,(screen_width-(player2.get_width()+20), 20))
-
-
+ 
     def draw_bg(self, screen):
         # clear screen to black
         screen.fill(background_color)
@@ -270,7 +270,7 @@ game_area = pygame.sprite.Group()
 power_bar = PowerBar()
 window = Screen()
 tahtain = Crosshair(crosshair_path, crosshair_color)
-gameboard = Gameboard(background_path, green_color)
+gameboard = Gameboard(background_path, background_color)
 player_1 = Ball(ball_path, player1_start_pos[0], player1_start_pos[1], white_color, time)
 player_2 = Ball(ball_path, player2_start_pos[0], player2_start_pos[1], white_color, time)
 
@@ -300,12 +300,15 @@ def createCuplist(x_ofset, reverse, group):
             group.add(Cups(redcup_path, x, y, red_color))
         addToY += 25
 
+
 def drawLine(pos1, pos2):
     pygame.draw.line(screen, (255,255,255), pos1, pos2)
 
+
 def mouseVisible(visible):
     pygame.mouse.set_visible(visible)
-    
+
+
 # DO INITIAL STUFF BEFORE GAME LAUNCH
 def initGame():
     createCuplist(132, False, cup_group_1)
@@ -319,13 +322,22 @@ def initGame():
 
     main()
 
+def drawScore(screen):
+    player1 = main_font.render(f"Johannes: {player_1.getScore()}", 1, white_color)
+    screen.blit(player1,(20, 20))
+
+    player2 = main_font.render(f"Milo: {player_2.getScore()}", 1, white_color)
+    screen.blit(player2,(screen_width-(player2.get_width()+20), 20))
+
+
 # PAUSE 
 def pauseGame():
     mouseVisible(True)
-    window.alpha(screen)
+    window.alpha(screen) 
     pause_text.drawText(screen)
     resume_text.drawText(screen)
     quit_text.drawText(screen)
+
 
 #GAME OVER
 def gameOver():
@@ -335,6 +347,8 @@ def gameOver():
     gameover_text.drawText(screen)
     newgame_text.drawText(screen)
     quit_text.drawText(screen)
+
+
 
 
 def main():
@@ -366,17 +380,20 @@ def main():
         power_bar.drawBar(screen)
         power_text.drawText(screen)
         window.drawHighScore(screen)
-        window.drawScore(screen)
+        drawScore(screen)
 
         # COLLIDE DETECTION
         if pygame.sprite.spritecollide(player_1, cup_group_2, True):
-            print("Hit")
+            player_1.updateScore()
 
             if len(cup_group_2) == 0:
                 gameover = True
                 
         elif pygame.sprite.spritecollide(player_2, cup_group_1, True):
-            print("Hit")
+            player_2.updateScore()
+
+            if len(cup_group_1) == 0:
+                gameover = True
 
 
         # KEY EVENTIT
@@ -390,17 +407,16 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     if not gameover:
                         pause = not pause
+                # 'HARD RESET'
+                if event.key == ord('f'):   
+                    initGame()
 
             if not pause:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1 and not ballMove: # 1 = left click
                         ballMove = True
             
-                elif event.type == pygame.KEYDOWN:
-                    # 'HARD RESET'
-                    if event.key == ord('f'):   
-                        initGame()
-                        
+                elif event.type == pygame.KEYDOWN:   
                     if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT or event.key == ord('a') or event.key == ord('d'):
                         power_bar.x_change = 5   
                     
@@ -471,8 +487,8 @@ def main():
                         if not gameover:
                             pygame.time.wait(1000)
                             player_2.restart((player2_start_pos[0], player2_start_pos[1]))
-                            player1 = True
-                            player2 = False
+                            player1 = False
+                            player2 = True                           
                             main()
 
                     player_2.ball_animation()
@@ -488,7 +504,7 @@ def main():
         elif pause and not gameover:
             pauseGame()
 
-        if gameover:
+        elif gameover:
             gameOver()
 
         pygame.display.update()
