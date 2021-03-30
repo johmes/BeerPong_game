@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import pygame, sys, random, time, math, os
 from pygame import mixer
+from pygame.locals import *
 import json
 
 pygame.init()
@@ -11,7 +12,8 @@ pygame.mixer.init()
 screen_width = 1280
 screen_height = 720
 vertical_center = screen_height/2
-screen = pygame.display.set_mode(size=(screen_width, screen_height), flags=0, depth=0, display=0, vsync=0)
+flags = DOUBLEBUF
+screen = pygame.display.set_mode((screen_width, screen_height), flags)
 
 
 white_color = (255, 255, 255)
@@ -24,10 +26,8 @@ crosshair_color = (102, 153, 255)
 
 
 # HighScores {}
-with open("HighScore.json",) as f:
+with open("C:/koodaus/Python/BeerPongGame/BeerPong_game/HighScore.json") as f:
     HighScores = json.load(f)
-    current_score_1 = 0
-    current_score_2 = 0
     highScore = 1000
 
 
@@ -42,10 +42,10 @@ list_font = pygame.font.SysFont("Helvetica", 25)
 symbols = pygame.font.SysFont("segoeuisymbol", 84)
 
 # SPRITE AND IMAGE PATHS
-ball_path = "images/ball.png"
-crosshair_path = "images/hiusristikko.png"
-redcup_path = "images/redcup.png"
-background_path = "images/beerbong_game_bg.png"
+ball_path = pygame.image.load("C:/koodaus/Python/BeerPongGame/BeerPong_game/images/ball.png")
+crosshair_path = pygame.image.load("C:/koodaus/Python/BeerPongGame/BeerPong_game/images/hiusristikko.png")
+redcup_path = pygame.image.load("C:/koodaus/Python/BeerPongGame/BeerPong_game/images/redcup.png")
+background_path = pygame.image.load("C:/koodaus/Python/BeerPongGame/BeerPong_game/images/beerbong_game_bg.png")
 
 # SOUNDS
 
@@ -104,6 +104,8 @@ class PowerBar:
     def reset(self):
         self.x_change = 0
         self.bar_start_width = 3
+
+
 # TEXT CLASS
 class Text:
     def __init__(self, text, font, color, position, center):
@@ -129,28 +131,30 @@ class Ball(pygame.sprite.Sprite):
     def __init__(self, path, pos_x, pos_y, color, time):
         super().__init__() 
         # Jos kuvaa ei löydy, näytä 30x30 neliö
-        try:
-            self.image = pygame.image.load(path)
-        except:
-             self.image = pygame.Surface([30,30])
-             self.image.fill(color)
-
-        self.rect = self.image.get_rect()
-        self.rect.midtop = [pos_x, pos_y]
-        self.ball_size = self.image.get_size()
         self.score = 0
-
+        self.path = path
         self.start_pos_x = pos_x
         self.start_pos_y = pos_x
+        self.colot = color
         self.dx = 0
         self.dy = 0
+        
+        try:
+            self.image = self.path
+        except:
+            self.image = pygame.Surface([30,30]).convert()
+            self.image.fill(self.color)
+
+        self.rect = self.image.get_rect()
+        self.rect.midtop = [self.start_pos_x, self.start_pos_y]
+        self.ball_size = self.image.get_size()
+
 
     def ball_animation(self):
         self.rect.x = self.rect.x + self.dx
         self.rect.y = self.rect.y + self.dy
 
     def restart(self, pos):
-        
         self.rect.x = pos[0]
         self.rect.y = pos[1]
         self.dy = 0
@@ -162,15 +166,19 @@ class Ball(pygame.sprite.Sprite):
     def getScore(self):
         return self.score
 
+    def resetScore(self):
+        self.score = 0
+    
+
 class Cups(pygame.sprite.Sprite):
     def __init__(self, path, pos_x, pos_y, color):
         super().__init__()
         
         try:
-            self.image = pygame.image.load(path)
+            self.image = path
         except:
             # Jos kuvaa ei löydy, näytä 40x40 neliö
-             self.image = pygame.Surface([40,40])
+             self.image = pygame.Surface([40,40]).convert()
              self.image.fill(color)
 
         self.rect = self.image.get_rect()
@@ -181,10 +189,10 @@ class Crosshair(pygame.sprite.Sprite):
         super().__init__()
 
         try:
-            self.image = pygame.image.load(path)
+            self.image = path
             self.rect = self.image.get_rect()
         except:
-             self.image = pygame.Surface([30,30])
+             self.image = pygame.Surface([30,30]).convert()
              self.image.fill(color)
              
         self.rect = self.image.get_rect()
@@ -198,10 +206,9 @@ class Gameboard(pygame.sprite.Sprite):
         super().__init__()
 
         try:
-            self.image = pygame.image.load(path)
+            self.image = path
         except:
-            # Jos kuvaa ei löydy, näytä 40x40 neliö
-             self.image = pygame.Surface([screen_width, screen_height])
+             self.image = pygame.Surface([screen_width, screen_height]).convert()
              self.image.fill(color)
         
         self.rect = self.image.get_rect()
@@ -216,7 +223,7 @@ class Screen:
         #self.set_background(background_path)
 
     def alpha(self, screen):
-        s = pygame.Surface((screen_width,screen_height))
+        s = pygame.Surface((screen_width,screen_height)).convert_alpha()
         s.set_alpha(50)
         s.fill((0,0,0))
         screen.blit(s, (0,0))
@@ -248,7 +255,7 @@ class Screen:
             try:
                 self.background = pygame.image.load(img)
             except:
-                self.background = pygame.Surface([screen_width,screen_height])
+                self.background = pygame.Surface([screen_width,screen_height]).convert()
                 self.background.fill(background_color) 
 
 
@@ -256,7 +263,8 @@ class Screen:
 FPS = 60
 player1_start_pos = [screen_width*0.03, vertical_center]
 player2_start_pos = [screen_width*0.96, vertical_center]
-
+player1 = True
+player2 = False
 
 # SPRITE GROUPS
 cup_group_1 = pygame.sprite.Group()
@@ -323,13 +331,26 @@ def initGame():
     main()
 
 def drawScore(screen):
-    player1 = main_font.render(f"Johannes: {player_1.getScore()}", 1, white_color)
-    screen.blit(player1,(20, 20))
+    if player1:
+        color1 = orange_color
+    else:
+        color1 = white_color
+    
+    if player2:
+        color2 = orange_color
+    else:
+        color2 = white_color
 
-    player2 = main_font.render(f"Milo: {player_2.getScore()}", 1, white_color)
-    screen.blit(player2,(screen_width-(player2.get_width()+20), 20))
+    player1_draw = main_font.render(f"Johannes: {player_1.getScore()}", 1, color1)
+    screen.blit(player1_draw,(20, 20))
 
+    player2_draw = main_font.render(f"Milo: {player_2.getScore()}", 1, color2)
+    screen.blit(player2_draw,(screen_width-(player2_draw.get_width()+20), 20))
 
+def scoreReset():
+    player_1.resetScore()
+    player_2.resetScore()
+    
 # PAUSE 
 def pauseGame():
     mouseVisible(True)
@@ -354,49 +375,54 @@ def gameOver():
 def main():
     # MAIN STRUCTURE
     clock = pygame.time.Clock()
-    
+    player_1.restart((player1_start_pos[0], player1_start_pos[1]))
+    player_2.restart((player2_start_pos[0], player2_start_pos[1]))
     power_bar.reset()
-
+    
+    global player1, player2
     run = True
-    gameover = False
+    isGameover = False
     pause = False
-    drunk = False
     ballMove = False
-    player1 = True
-    player2 = False
-    previousXPos = 0
-    previousYPos = 0
+    previousXPos1 = 0
+    previousXPos2 = 1280
     time = 0
 
     while run:
         mousePos = pygame.mouse.get_pos()
 
-        # DRAWS
+        # DRAWS    
         window.draw_bg(screen)
-        game_area.draw(screen)
+        game_area.draw(screen)        
         cup_group_1.draw(screen)
         cup_group_2.draw(screen)
         player_group.draw(screen)
         power_bar.drawBar(screen)
-        power_text.drawText(screen)
         window.drawHighScore(screen)
         drawScore(screen)
+        power_text.drawText(screen)
 
         # COLLIDE DETECTION
         if pygame.sprite.spritecollide(player_1, cup_group_2, True):
-            player_1.updateScore()
+            if len(cup_group_2) <= 0:
+                isGameover = True
+            else:
+                player_1.updateScore()
+                player1 = False
+                player2 = True                         
+                main()
 
-            if len(cup_group_2) == 0:
-                gameover = True
-                
-        elif pygame.sprite.spritecollide(player_2, cup_group_1, True):
-            player_2.updateScore()
-
-            if len(cup_group_1) == 0:
-                gameover = True
-
+        if pygame.sprite.spritecollide(player_2, cup_group_1, True):
+            if len(cup_group_1) <= 0:
+                isGameover = True   
+            else:
+                player_2.updateScore()
+                player1 = True
+                player2 = False                           
+                main()               
 
         # KEY EVENTIT
+        pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN])
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -405,10 +431,12 @@ def main():
             if event.type == pygame.KEYDOWN:
                 # Pause on ESC
                 if event.key == pygame.K_ESCAPE:
-                    if not gameover:
+                    if not isGameover:
                         pause = not pause
                 # 'HARD RESET'
-                if event.key == ord('f'):   
+                if event.key == ord('f'):
+                    player1 = True
+                    player2 = False                          
                     initGame()
 
             if not pause:
@@ -420,10 +448,16 @@ def main():
                     if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT or event.key == ord('a') or event.key == ord('d'):
                         power_bar.x_change = 5   
                     
-                    if gameover:
-                        if event.key == pygame.K_RETURN:  
+                    if isGameover:
+                        if event.key == pygame.K_RETURN:
+                            scoreReset()
+                            player1 = True
+                            player2 = False     
                             initGame()
                         elif event.key == ord('q'):
+                            scoreReset()
+                            player1 = True
+                            player2 = False                            
                             game_menu()
 
                 elif event.type == pygame.KEYUP:
@@ -433,6 +467,9 @@ def main():
                 if event.type == pygame.KEYDOWN:
                     # Go to main menu
                     if event.key == ord('q'):
+                        scoreReset()
+                        player1 = True
+                        player2 = False                           
                         game_menu()
         
         
@@ -444,54 +481,38 @@ def main():
                 time += 0.04
 
                 if player1:
-                    if drunk:
-                        deviationY = 100 * random.random() * ((-0.71) - 0.71) + 0.71
-                        deviationX = 100 * random.random() * ((-0.41) - 0.71) + 0.41
-                    else: 
-                        deviationX = 0
-                        deviationY = 0
-
-                    angle = math.atan2((mousePos[1]+deviationY)-player1_start_pos[1], (mousePos[0]+deviationX)-player1_start_pos[0])
+                    player_1.ball_animation()
+                    angle = math.atan2((mousePos[1])-player1_start_pos[1], (mousePos[0])-player1_start_pos[0])
                     
 
-                    if player_1.rect.x > previousXPos:
+                    if player_1.rect.x > previousXPos1:
                         player_1.dx = (speed * math.cos(angle)) + (-9.81* (time)**2)
                         player_1.dy = speed * math.sin(angle)
-                        previousXPos = player_1.rect.x
+                        previousXPos1 = player_1.rect.x
                     else:
-                        if not gameover:
+                        if not isGameover:
                             pygame.time.wait(1000)
-                            player_1.restart((player1_start_pos[0], player1_start_pos[1]))
                             player1 = False
                             player2 = True                           
                             main()
 
-                    player_1.ball_animation()
 
                 if player2:
-                    if drunk:
-                        deviationY = 100 * random.random() * ((-0.71) - 0.71) + 0.71
-                        deviationX = 100 * random.random() * ((-0.41) - 0.71) + 0.41
-                    else: 
-                        deviationX = 0
-                        deviationY = 0
-
-                    angle = math.atan2((mousePos[1]+deviationY)-player2_start_pos[1], (mousePos[0]+deviationX)-player2_start_pos[0])
-                    
-
-                    if player_2.rect.x > previousXPos:
-                        player_2.dx = (speed * math.cos(angle)) + (-9.81* (time)**2)
-                        player_2.dy = speed * math.sin(angle)
-                        previousXPos = player_2.rect.x
-                    else:
-                        if not gameover:
-                            pygame.time.wait(1000)
-                            player_2.restart((player2_start_pos[0], player2_start_pos[1]))
-                            player1 = False
-                            player2 = True                           
-                            main()
-
                     player_2.ball_animation()
+
+                    angle = math.atan2((mousePos[1])-player2_start_pos[1], (mousePos[0])-player2_start_pos[0])
+
+
+                    if player_2.rect.x < previousXPos2:
+                        player_2.dx = (speed * math.cos(angle)) + (9.81* (time)**2)
+                        player_2.dy = (speed * math.sin(angle))
+                        previousXPos2 = player_2.rect.x
+                    else:
+                        if not isGameover:
+                            pygame.time.wait(1000)
+                            player1 = True
+                            player2 = False                                                     
+                            main()
  
             else:
                 crosshair_group.draw(screen)
@@ -501,10 +522,11 @@ def main():
                 player_group.update()
                 power_bar.barAnimation()
 
-        elif pause and not gameover:
+        elif pause and not isGameover:
             pauseGame()
 
-        elif gameover:
+        if isGameover:
+            ballMove = False
             gameOver()
 
         pygame.display.update()
@@ -523,10 +545,9 @@ def game_menu():
                 # ENTER to restart
                 if event.key == pygame.K_RETURN:
                     initGame()
-
         screen.fill(background_color)
         logo_text.drawText(screen)
         newgame_text.drawText(screen)
         pygame.display.update()
-        clock.tick(60)   
+        clock.tick(FPS)   
 game_menu()
