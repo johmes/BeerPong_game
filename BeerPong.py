@@ -236,14 +236,17 @@ class Screen:
         screen.blit(title_label,(0.45*screen_width, 5))
         s=1
         y = 30
-        for i in range(0,5):
-            list_label = list_font.render((str(s)+".    "+(str(keys[i]))),1,(150,150,150))
-            screen.blit(list_label,(0.45*screen_width,y ))
+        try:
+            for i in range(0,5):
+                list_label = list_font.render((str(s)+".    "+(str(keys[i]))),1,(150,150,150))
+                screen.blit(list_label,(0.45*screen_width,y ))
 
-            list_label = list_font.render(str(HighScores[keys[i]]),1,(100,255,150))
-            screen.blit(list_label,(screen_width/2 + 80, y))
-            s += 1
-            y += 23
+                list_label = list_font.render(str(HighScores[keys[i]]),1,(100,255,150))
+                screen.blit(list_label,(screen_width/2 + 80, y))
+                s += 1
+                y += 23
+        except IndexError:
+            pass
 
  
     def draw_bg(self, screen):
