@@ -26,9 +26,8 @@ crosshair_color = (102, 153, 255)
 
 
 # HighScores {}
-with open("C:/koodaus/Python/BeerPongGame/BeerPong_game/HighScore.json") as f:
+with open("C:/Users/Milo Brown/Desktop/BeerPong/BeerPong_game/HighScore.json") as f:
     HighScores = json.load(f)
-    highScore = 1000
 
 
 # FONTS
@@ -40,17 +39,21 @@ big_font = pygame.font.SysFont("magneto", 84)
 title_font = pygame.font.SysFont("Helvetica", 25, True)
 list_font = pygame.font.SysFont("Helvetica", 25)
 symbols = pygame.font.SysFont("segoeuisymbol", 84)
+txtinput_font = pygame.font.Font(None, 32)
 
 # SPRITE AND IMAGE PATHS
-ball_path = pygame.image.load("C:/koodaus/Python/BeerPongGame/BeerPong_game/images/ball.png")
-crosshair_path = pygame.image.load("C:/koodaus/Python/BeerPongGame/BeerPong_game/images/hiusristikko.png")
-redcup_path = pygame.image.load("C:/koodaus/Python/BeerPongGame/BeerPong_game/images/redcup.png")
-background_path = pygame.image.load("C:/koodaus/Python/BeerPongGame/BeerPong_game/images/beerbong_game_bg.png")
+ball_path = pygame.image.load("C:/Users/Milo Brown/Desktop/BeerPong/BeerPong_game/ball.png")
+crosshair_path = pygame.image.load("C:/Users/Milo Brown/Desktop/BeerPong/BeerPong_game/hiusristikko.png")
+redcup_path = pygame.image.load("C:/Users/Milo Brown/Desktop/BeerPong/BeerPong_game/redcup.png")
+background_path = pygame.image.load("C:/Users/Milo Brown/Desktop/BeerPong/BeerPong_game/beerbong_game_bg.png")
 
 # SOUNDS
 
 #TEXTS
 main_caption = "Asteriski Beer Pong"
+active_player = 1
+player_name1 = "Player 1"
+player_name2 = "Player 2"
 
 
 
@@ -222,9 +225,9 @@ class Screen:
         
         #self.set_background(background_path)
 
-    def alpha(self, screen):
+    def alpha(self, screen, darkness):
         s = pygame.Surface((screen_width,screen_height)).convert_alpha()
-        s.set_alpha(50)
+        s.set_alpha(darkness)
         s.fill((0,0,0))
         screen.blit(s, (0,0))
 
@@ -258,6 +261,44 @@ class Screen:
                 self.background = pygame.Surface([screen_width,screen_height]).convert()
                 self.background.fill(background_color) 
 
+#TextBox class
+class InputBox:
+    def __init__(self, x, y, w, h, text=''):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.w = w
+        self.h = h
+        self.color = white_color
+        self.text = text
+        self.txt_surface = txtinput_font.render(text, True, self.color)
+        self.input = ""
+
+    def handle_event(self, event):
+        global player_name1,player_name2,active_player
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                self.input = self.text
+                if not(self.input==""):
+                    if active_player ==1:
+                        player_name1 = self.input
+                        active_player+=1
+                    else:
+                        player_name2 = self.input
+                        active_player-=1
+                    self.text = ''
+            elif event.key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+            else:
+                self.text += event.unicode
+            self.txt_surface = txtinput_font.render(self.text, True, self.color)
+
+    def update(self):
+        width = max(200, self.txt_surface.get_width()+10)
+        self.rect.w = width
+
+    def draw(self, screen):
+        screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
+        pygame.draw.rect(screen, self.color, self.rect, 2)
+
 
 # INIT VARIABLES
 FPS = 60
@@ -274,14 +315,14 @@ crosshair_group = pygame.sprite.Group()
 game_area = pygame.sprite.Group()
 
 
-# OBEJCTS
+# OBJECTS
 power_bar = PowerBar()
 window = Screen()
 tahtain = Crosshair(crosshair_path, crosshair_color)
 gameboard = Gameboard(background_path, background_color)
 player_1 = Ball(ball_path, player1_start_pos[0], player1_start_pos[1], white_color, time)
 player_2 = Ball(ball_path, player2_start_pos[0], player2_start_pos[1], white_color, time)
-
+input_box = InputBox(screen_width/2 - 110, screen_height/2, 140, 32)
 
 #TEXTS OBJECTS
 logo_text = Text(main_caption, big_font, orange_color, (screen_width/2, screen_height/2-80), True)
@@ -291,6 +332,8 @@ resume_text = Text("Resume (ESC)", main_font, white_color, (screen_width/2, scre
 power_text = Text("POWER: ", main_font_small, white_color, (70,screen_height-50), True)
 gameover_text = Text("GAME OVER", main_font_big, orange_color, (screen_width/2, screen_height/2-50), True)
 newgame_text = Text("New Game (ENTER)", main_font, white_color, (screen_width/2, screen_height/2+50), True)
+player1_text = Text("Enter Player1 name: ", main_font, white_color,(screen_width/2, screen_height/2-50), True)
+player2_text = Text("Enter Player2 name: ", main_font, white_color,(screen_width/2, screen_height/2-50), True)
 # New Game ⏎
 
 
@@ -328,6 +371,9 @@ def initGame():
     player_1.restart((player1_start_pos[0], player1_start_pos[1]))
     player_2.restart((player2_start_pos[0], player2_start_pos[1]))
 
+
+    enterName()
+    enterName()
     main()
 
 def drawScore(screen):
@@ -341,10 +387,10 @@ def drawScore(screen):
     else:
         color2 = white_color
 
-    player1_draw = main_font.render(f"Johannes: {player_1.getScore()}", 1, color1)
+    player1_draw = main_font.render(f"{player_name1}: {player_1.getScore()}", 1, color1)
     screen.blit(player1_draw,(20, 20))
 
-    player2_draw = main_font.render(f"Milo: {player_2.getScore()}", 1, color2)
+    player2_draw = main_font.render(f"{player_name2}: {player_2.getScore()}", 1, color2)
     screen.blit(player2_draw,(screen_width-(player2_draw.get_width()+20), 20))
 
 def scoreReset():
@@ -354,7 +400,7 @@ def scoreReset():
 # PAUSE 
 def pauseGame():
     mouseVisible(True)
-    window.alpha(screen) 
+    window.alpha(screen,50) 
     pause_text.drawText(screen)
     resume_text.drawText(screen)
     quit_text.drawText(screen)
@@ -362,14 +408,55 @@ def pauseGame():
 
 #GAME OVER
 def gameOver():
+    global HighScores
+    if not(player_name1=="Player 1"):
+        HighScores[player_name1] = player_1.getScore()
+    if not(player_name2 == "Player 2"):
+        HighScores[player_name2] = player_2.getScore()
+
+    HighScores = dict(sorted(HighScores.items(), key=lambda item: item[1],reverse=True))
+    with open("C:/Users/Milo Brown/Desktop/BeerPong/BeerPong_game/HighScore.json","w") as file:
+        json.dump(HighScores,file)
+    f = open("C:/Users/Milo Brown/Desktop/BeerPong/BeerPong_game/HighScore.json",)
+    HighScores = json.load(f)
     quit_text = Text("Main menu (Q)", main_font, white_color, (screen_width/2, screen_height/2+90), True)
     mouseVisible(True)
-    window.alpha(screen)
+    window.alpha(screen,50)
     gameover_text.drawText(screen)
     newgame_text.drawText(screen)
     quit_text.drawText(screen)
 
+#Enter Player name in beginning
+def enterName():
+    window.draw_bg(screen)
+    game_area.draw(screen)
+    window.alpha(screen,150)
+    done = False
+    while not done:
+        if active_player == 1:
+            player1_text.drawText(screen)
+        else:
+            player2_text.drawText(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    done = True
+            input_box.handle_event(event)   
+        input_box.update()
 
+        window.draw_bg(screen)
+        game_area.draw(screen)
+        window.alpha(screen,150)
+        if active_player == 1:
+            player1_text.drawText(screen)
+        else:
+            player2_text.drawText(screen)
+
+        input_box.draw(screen)
+        
+        pygame.display.update()
 
 
 def main():
