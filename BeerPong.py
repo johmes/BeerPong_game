@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-import pygame, sys, random, time, math, os
+import  os
+import pygame, sys, random, time, math
 from pygame import mixer
 from pygame.locals import *
 import json
@@ -12,8 +13,11 @@ pygame.mixer.init()
 screen_width = 1280
 screen_height = 720
 vertical_center = screen_height/2
-flags = DOUBLEBUF
-screen = pygame.display.set_mode((screen_width, screen_height), flags)
+clock = pygame.time.Clock()
+
+flags = pygame.SCALED|  DOUBLEBUF + clock.tick()
+screen = pygame.display.set_mode((screen_width, screen_height), flags, display=0, vsync=0)
+
 
 
 white_color = (255, 255, 255)
@@ -48,11 +52,26 @@ symbols = pygame.font.SysFont("segoeuisymbol", 84)
 txtinput_font = pygame.font.Font(None, 32)
 
 # SPRITE AND IMAGE PATHS
-ball_path = "images/ball.png"
-crosshair_path = "images/hiusristikko.png"
-redcup_path = "images/redcup.png"
-background_path = "images/beerbong_game_bg.png"
-icon_path = "images/BeerPongLogo.png"
+try:
+    ball_path = pygame.image.load("images/ball.png")   
+except:
+    pass
+try:
+    crosshair_path = pygame.image.load("images/hiusristikko.png")  
+except:
+    pass
+try:
+    redcup_path = pygame.image.load("images/redcup.png") 
+except:
+    pass
+try:
+    icon_path = pygame.image.load("images/BeerPongLogo.png")    
+except:
+    pass
+try:
+    background_path = pygame.image.load("images/beerbong_game_bg_color.png").convert()
+except:
+    pass
 
 # SOUNDS
 
@@ -149,7 +168,7 @@ class PowerBar:
 
 
 # TEXT CLASS
-class Text:
+class Text():
     def __init__(self, text, font, color, position, center):
         self.text = text
         self.color = color
@@ -169,12 +188,14 @@ class Text:
 # SPRITE CLASSES
 
 # Ball Class
-class Ball(pygame.sprite.Sprite):
+class Ball(pygame.sprite.DirtySprite):
     def __init__(self, path, pos_x, pos_y, color, time):
         super().__init__() 
+        self.dirty = 2
+        self.blendmode = 0
+        self.visible = 1
         # Jos kuvaa ei löydy, näytä 30x30 neliö
         self.score = 0
-        self.path = path
         self.start_pos_x = pos_x
         self.start_pos_y = pos_x
         self.color = color
@@ -182,7 +203,7 @@ class Ball(pygame.sprite.Sprite):
         self.dy = 0
         
         try:
-            self.image = pygame.image.load(self.path)
+            self.image = path
         except:
             self.image = pygame.Surface([30,30]).convert()
             self.image.fill(self.color)
@@ -212,12 +233,14 @@ class Ball(pygame.sprite.Sprite):
         self.score = 0
     
 
-class Cups(pygame.sprite.Sprite):
+class Cups(pygame.sprite.DirtySprite):
     def __init__(self, path, pos_x, pos_y, color):
         super().__init__()
-        
+        self.dirty = 2
+        self.blendmode = 0
+        self.visible = 1
         try:
-            self.image = pygame.image.load(path)
+            self.image = path
         except:
             # Jos kuvaa ei löydy, näytä 40x40 neliö
              self.image = pygame.Surface([40,40]).convert()
@@ -226,13 +249,14 @@ class Cups(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.midtop = [pos_x, pos_y]
 
-class Crosshair(pygame.sprite.Sprite):
+class Crosshair(pygame.sprite.DirtySprite):
     def __init__(self, path, color):
         super().__init__()
-
+        self.dirty = 2
+        self.blendmode = 0
+        self.visible = 1
         try:
-            self.image = pygame.image.load(path)
-            self.rect = self.image.get_rect()
+            self.image = path
         except:
              self.image = pygame.Surface([30,30]).convert()
              self.image.fill(color)
@@ -243,12 +267,15 @@ class Crosshair(pygame.sprite.Sprite):
     def update(self):
         self.rect.center = pygame.mouse.get_pos()
 
-class Gameboard(pygame.sprite.Sprite):
+class Gameboard(pygame.sprite.DirtySprite):
     def __init__(self, path, color):
         super().__init__()
+        self.dirty = 2
+        self.blendmode = 0
+        self.visible = 1
 
         try:
-            self.image = pygame.image.load(path)
+            self.image = path
         except:
              self.image = pygame.Surface([screen_width, screen_height]).convert()
              self.image.fill(color)
@@ -261,11 +288,14 @@ class Screen:
         self.caption = main_caption
         self.background = None
         pygame.display.set_caption(self.caption)
-        pygame.display.set_icon(pygame.image.load(icon_path))
-        
+        try:
+            pygame.display.set_icon(icon_path)
+        except:
+            pass
+
 
     def alpha(self, screen, darkness):
-        s = pygame.Surface((screen_width,screen_height)).convert_alpha()
+        s = pygame.Surface((screen_width,screen_height)).convert()
         s.set_alpha(darkness)
         s.fill((0,0,0))
         screen.blit(s, (0,0))
@@ -299,7 +329,8 @@ class Screen:
         if self.background:
             screen.blit(self.background, (0,0))
         else:
-            screen.blit(screen, (0,0))        
+            screen.blit(screen, (0,0)) 
+                  
 
 
 #TextBox class
@@ -345,17 +376,17 @@ class InputBox:
 player1_start_pos = [screen_width*0.03, vertical_center]
 player2_start_pos = [screen_width*0.96, vertical_center]
 
-FPS = 60
+FPS = 90
 fpsOn = True
 player1 = True
 player2 = False
 
 # SPRITE GROUPS
-cup_group_1 = pygame.sprite.Group()
-cup_group_2 = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
-crosshair_group = pygame.sprite.Group()
-game_area = pygame.sprite.Group()
+cup_group_1 = pygame.sprite.LayeredDirty()
+cup_group_2 = pygame.sprite.LayeredDirty()
+player_group = pygame.sprite.LayeredDirty()
+crosshair_group = pygame.sprite.LayeredDirty()
+game_area = pygame.sprite.LayeredDirty()
 
 
 # OBJECTS
@@ -457,7 +488,7 @@ def scoreReset():
 # PAUSE 
 def pauseGame():
     mouseVisible(True)
-    window.alpha(screen,50) 
+    window.alpha(screen, 60) 
     pause_text.drawText(screen)
     resume_text.drawText(screen)
     quit_text.drawText(screen)
@@ -469,12 +500,11 @@ def gameOver():
         HighScores[player_name1] = player_1.getScore()
     if not(player_name2 == "Player 2"):
         HighScores[player_name2] = player_2.getScore()
-
+    quit_text = Text("Main menu (Q)", main_font, white_color, (screen_width/2, screen_height/2+85), True)
     updateHighScore()
     getHighScore()
-    quit_text = Text("Main menu (Q)", main_font, white_color, (screen_width/2, screen_height/2+90), True)
     mouseVisible(True)
-    window.alpha(screen,50)
+    window.alpha(screen, 60)
     gameover_text.drawText(screen)
     newgame_text.drawText(screen)
     quit_text.drawText(screen)
@@ -496,21 +526,19 @@ def enterName():
                     done = True
             input_box.handle_event(event)   
         input_box.update()
-
         window.alpha(screen,150)
+
         if active_player == 1:
             player1_text.drawText(screen)
         else:
             player2_text.drawText(screen)
 
         input_box.draw(screen)
-        
         pygame.display.update()
 
     
 def main():
     # MAIN STRUCTURE
-    clock = pygame.time.Clock()
 
     global player1, player2
     run = True
@@ -689,7 +717,6 @@ def main():
 
 # MAINMENU        
 def game_menu():
-    clock = pygame.time.Clock()
     while True:
         fps_text = Text(f"{round(clock.get_fps(),0)} FPS", main_font_small, orange_color,(screen_width/2,680), True)
         for event in pygame.event.get():
