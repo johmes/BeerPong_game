@@ -15,8 +15,8 @@ screen_height = 720
 vertical_center = screen_height/2
 clock = pygame.time.Clock()
 
-flags = HWSURFACE | DOUBLEBUF + clock.tick()
-screen = pygame.display.set_mode((screen_width, screen_height), flags, vsync=1)
+flags = pygame.SCALED|  DOUBLEBUF + clock.tick()
+screen = pygame.display.set_mode((screen_width, screen_height), flags, display=0, vsync=0)
 
 
 
@@ -329,7 +329,8 @@ class Screen:
         if self.background:
             screen.blit(self.background, (0,0))
         else:
-            screen.blit(screen, (0,0))        
+            screen.blit(screen, (0,0)) 
+                  
 
 
 #TextBox class
